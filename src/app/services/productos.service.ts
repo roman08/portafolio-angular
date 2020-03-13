@@ -8,20 +8,46 @@ import { Producto } from '../interfaces/producto.interfaces';
 export class ProductosService {
   productos: Producto[] = [];
   cargando: boolean = true;
+  productosFiltrado: Producto[] = [];
   constructor( private http: HttpClient) {
     this.cargatProductos();
    }
 
 
   private cargatProductos() {
-    this.http.get('https://angular-html-f1557.firebaseio.com/productos_idx.json')
+    return new Promise( (resolve, reject) => {
+      this.http.get('https://angular-html-f1557.firebaseio.com/productos_idx.json')
       .subscribe( (respo: Producto[] ) => {
         this.productos = respo;
-        setTimeout(() => {
-          this.cargando = false;
-        },1000);
-        
-        console.log(this.productos);
-      })
+        this.cargando = false;
+        resolve();
+      });
+    });
+
+  }
+
+  getProducto(id: string) {
+    return this.http.get(`https://angular-html-f1557.firebaseio.com/productos/${id}.json`);
+  }
+
+  buscarProducto( term: string) {
+    if( this.productos.length === 0) {
+      this.cargatProductos().then( () => {
+        this.filtrarProductos( term);
+      });
+    } else{
+      this.filtrarProductos( term);
+    }
+  }
+
+  private filtrarProductos( term: string) {
+    this.productosFiltrado = [];
+    term = term.toLocaleLowerCase();
+    this.productos.forEach( prod => {
+      const tituloLower = prod.titulo.toLocaleLowerCase();
+      if ( prod.categoria.indexOf( term ) >= 0 || tituloLower.indexOf(term) >= 0) {
+        this.productosFiltrado.push(prod);
+      }
+    });
   }
 }
